@@ -7,6 +7,8 @@ namespace khGit
 
     class GitContainer
     {
+        public readonly GitBranches OriginBranches = new GitBranches();
+        public readonly GitBranches LocalBranches = new GitBranches();
         public readonly GitBranches Branches = new GitBranches();
         public readonly IList<GitStash> Stashes = new List<GitStash>();
         public GitBranch ActiveBranch { get; private set; }
@@ -21,32 +23,64 @@ namespace khGit
         public void ParseBranch(string branches)
         {
             Branches.Clear();
+            LocalBranches.Clear();
+            OriginBranches.Clear();
             GitBranch gitBranch;
             ActiveBranch = null;
             var branchList = branches.Split("\n");
             for (var i = 0; i < branchList.Length; i++)
             {
-                var branch = branchList[i].Replace('*', ' ');
+                var branch = GitBranch.SanitizeName(branchList[i]);
+                if (branch.Contains("->"))
+                    continue;
                 if (branch.Trim() == "")
                 {
                     continue;
                 }
-
-                if (branch != branchList[i])
+                if (branchList[i].Contains('*'))
                 {
-                    
-                    gitBranch = new GitBranch(branch, true);
+                    gitBranch = new GitBranch(GitBranch.CommonName(branch), true);
                     ActiveBranch = gitBranch;
                 }
                 else
                 {
-                    gitBranch = new GitBranch(branch);
+                    gitBranch = new GitBranch(GitBranch.CommonName(branch));
                 }
 
-                Branches.Add(gitBranch);
-
+                if (GitBranch.IsOrigin(branch))
+                {
+                    OriginBranches.Add(gitBranch);
+                }
+                else
+                {
+                    LocalBranches.Add(gitBranch);
+                }
+                Branches.AddDistinct(gitBranch);
             }
 
+        }
+        public bool IsBranchLocalOnly(string name)
+        {
+            return !OriginBranches.Exists(name) && LocalBranches.Exists(name);
+        }
+        public bool IsBranchRemoteOnly(string name)
+        {
+            return OriginBranches.Exists(name) && !LocalBranches.Exists(name);
+        }
+        public bool IsBranchLocalAndRemote(string name)
+        {
+            return OriginBranches.Exists(name) && LocalBranches.Exists(name);
+        }
+        public bool IsTracked(string name)
+        {
+            if (IsBranchLocalAndRemote(name))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
         public void ParseStashes(string data)
         {

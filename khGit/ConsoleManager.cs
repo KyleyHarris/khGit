@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace khGit
 {
@@ -12,7 +13,7 @@ namespace khGit
 
         private bool LoadBranches()
         {
-            var s = GitCommands.GetBranchList();
+            var s = GitCommands.GetAllBranches();
             if (!s.Contains("fatal:"))
             {
                 git.ParseBranch(s);
@@ -53,6 +54,9 @@ namespace khGit
                 try
                 {
 
+                    // any command the user types --dry will not perform the 
+                    // operation but it will show the user the execution 
+                    // cmd script that would run
                     ExecuteShell.DryRun = data.HasArg("--dry");
                     try
                     {
@@ -91,10 +95,11 @@ namespace khGit
 
         private void RenderConsole()
         {
+            // treating this like a console application
             render.Clear();
 
-            render.WriteLn("khGit Interface - "+GitCommands.GetUserDetails());
-
+            // make sure the user has the correct commit login shown
+            render.WriteLn("khGit Interface - " + GitCommands.GetUserDetails());
             RenderBranches();
             LoadStashes();
             render.WriteLn();
@@ -109,7 +114,7 @@ namespace khGit
                 {
                     render.WriteLn("-----GIT Repo has stashes available to use-----------", ConsoleColor.Green);
                 }
-                PrintCommand("S", "tash List, or ([NEW] Create Stash [K]eep Code)  ");NewLine();
+                PrintCommand("S", "tash List, or ([NEW] Create Stash [K]eep Code)  "); NewLine();
                 //PrintCommand("S", "[NEW] Create Stash [K]eep Code");
                 PrintCommand("F", "eature Start [<name>]");
                 PrintCommand("B", "ug Start");
@@ -172,62 +177,110 @@ namespace khGit
         {
             LoadBranches();
             render.WriteLn("-Type Branch number to checkout-----------------------------------", ConsoleColor.Green);
-            var firstY = Console.CursorTop;
+
+            //to save space we are going to render the Branch help next to the branch data
+            //we are not expecting massive unwieldy branch names to be here.
+            // space for around 40char branch names
+            var helpStrings = new List<string>();
+            helpStrings.Add("<Branch-Num> [S][SP][SA]");
+            helpStrings.Add("S -> will create a stash before switching");
+            helpStrings.Add("SP-> will create a stash and apply the stash ");
+            helpStrings.Add("     in the new branch and delete the stash");
+            helpStrings.Add("SA-> will create a stash and apply the stash");
+            helpStrings.Add("     in the new branch and preserve the stash");
+            helpStrings.Add("FF-> Permanently delete the specified feature ");
+            helpStrings.Add("     branch from the local git");
+
+            //render help strings as required side by side
+            void _PopHelp(bool padding = false)
+            {
+                if (helpStrings.Count > 0)
+                {
+                    string s = "";
+                    if (padding)
+                    {
+                        s = s.PadLeft(45);
+                    }
+                    render.WriteLn(s + helpStrings[0]);
+                    helpStrings.RemoveAt(0);
+                }
+                else
+                {
+                    NewLine();
+                }
+            }
+
+            // list all branches with a 1 based notation
+            // master is not used by the flow at his level
+            // so we disable it for this purpose
+            // active branch displayed in red
+            // feature/branch truncated to f/branch
+            // help side listed
             for (var i = 1; i <= git.Branches.Count; i++)
             {
                 var branch = git.Branches[i - 1];
+                if (branch.Branch == "master")
+                {
+                    //                    s = s + "(locked)";
+                    //                  c = branch.IsActive ? ConsoleColor.Red : ConsoleColor.Cyan;
+                    continue;
+                }
                 render.Write($"{i.ToString().PadLeft(3)}) ", ConsoleColor.Yellow);
                 ConsoleColor c = branch.IsActive ? ConsoleColor.Red : ConsoleColor.White;
                 var s = branch.ToString();
-                if (branch.Branch == "master")
+
+                if (git.IsBranchRemoteOnly(branch.Branch))
                 {
-                    s = s + "(locked)";
-                    c = ConsoleColor.Cyan;
+                    s = "origin/" + s;
                 }
                 else
-                    if (branch.IsFeatureBranch)
+                if (git.IsBranchLocalOnly(branch.Branch))
                 {
-                    s = s.Replace("feature/", "  f/");
-                    c = ConsoleColor.Yellow;
+                    s = "local/" + s;
                 }
-                render.WriteLn(s, c);
-            }
-            var x = Console.CursorLeft;
-            var y = Console.CursorTop;
-            render.MarginX = 46;
-            render.MoveXY(46, firstY);
-            render.WriteLn("<Branch-Num> [S][SP][SA]", ConsoleColor.Yellow);
-            render.WriteLn("S -> will create a stash before switching");
-            render.WriteLn("SP-> will create a stash and apply the stash ");
-            render.WriteLn("     in the new branch and delete the stash");
-            render.WriteLn("SA-> will create a stash and apply the stash");
-            render.WriteLn("     in the new branch and preserve the stash");
-            render.WriteLn("FF-> Permanently delete the specified feature ", ConsoleColor.Magenta);
-            render.WriteLn("     branch from the local git", ConsoleColor.Magenta);
+                if (branch.IsFeatureBranch)
+                {
+                    s = s.Replace("feature/", "f/");
+                    c = branch.IsActive ? ConsoleColor.Red : ConsoleColor.Yellow;
+                }
+                render.Write(s.PadRight(40), c);
+                _PopHelp();
 
-            Console.CursorTop = Math.Max(firstY + git.Branches.Count, Console.CursorTop);
-            render.MarginX = 0;
-            render.MoveXY(0, Console.CursorTop);
+            }
+
+            //if there is any help left, write it out
+            while (helpStrings.Count > 0)
+            {
+                _PopHelp(true);
+            }
+
             render.WriteLn("------------------------------------------------------------------", ConsoleColor.Green);
             render.WriteLn();
         }
 
+
+        //used to pause the rendering engine to display information and wait for information
         private void Inform(string s, ConsoleColor c = ConsoleColor.White)
         {
             render.Write(">> ");
             render.WriteLn(s, ConsoleColor.Red);
-            render.Write("Press <Enter> to continue) ");
-            Console.ReadLine();
+            render.Write("Press any key to continue) ");
+            Console.ReadKey();
         }
         private void Warn(string s)
         {
             Inform(s, ConsoleColor.Red);
         }
+
+        //this is the main command processing loop
         private void ProcessCommands(CmdLine cmdLine)
         {
             var cmd = cmdLine.FirstCommand;
             GitBranch branch;
             Int32 branchNum = cmdLine.FirstNumber;
+
+            // if the primary command is a number then we are performing an action
+            // based on a branch. any invalid numbers will be ignored
             if (branchNum != -1)
             {
                 if (git.ValidBranch(branchNum, out branch))
@@ -245,10 +298,12 @@ namespace khGit
                 switch (cmd)
                 {
                     case "i":
+                        //this will only occurr if there is no develop branch.
                         CreateDevelop();
                         break;
                     case "/?":
                     case "--help":
+                        //no help yet as it is built into the view for simple reminder use
                         ShowHelp();
                         break;
                     case "exit":
@@ -256,14 +311,19 @@ namespace khGit
                         CloseApp = true;
                         break;
                     case "s":
+                        //run the stash menu subloop for apply/delete/pop stash
                         ShowStashMenu(cmdLine);
                         break;
                     case "f":
                         var featureName = "";
+                        // a feature can be run in the form of :
+                        // f this is a feature
+                        // will will run a new feature called this-is-a-feature
                         if (cmdLine.Count > 1)
                         {
                             featureName = String.Join("-", cmdLine.commands, 1, cmdLine.Count - 1);
                         }
+                        //if feature name is empty then we will request a name
                         CreateFeatureBranch(featureName);
                         break;
                     default:
@@ -275,9 +335,7 @@ namespace khGit
 
         private void CreateFeatureBranch(string featureName)
         {
-
-            render.WriteLn("Feature branches follow the format feature/<name> without spaces in the name", ConsoleColor.Yellow);
-            render.WriteLn("if you type \"Feature branch\" then it will become \"feature/feature-branch\"", ConsoleColor.Yellow);
+            // if we have a feature name this process will run immediately with no imput
             if (featureName != "")
             {
                 if (Confirm($"Create the feature branch \"{featureName}\""))
@@ -287,14 +345,24 @@ namespace khGit
                 return;
             }
 
+            render.WriteLn("Feature branches follow the format feature/<name> without spaces in the name", ConsoleColor.Yellow);
+            render.WriteLn("if you type \"Feature branch\" then it will become \"feature/feature-branch\"", ConsoleColor.Yellow);
             string branchName;
             branchName = GetDataFromUser("Enter the <name> or press <Enter> to cancel").Trim().Replace(' ', '-');
             if (branchName.Trim() != "")
             {
+                //this flow always pushes branches to remote
                 render.WriteLn("Please be patient as we create local/remote branches", ConsoleColor.Yellow);
                 Inform(GitCommands.CreateFeatureBranch(branchName));
             }
         }
+
+        //this flow is designed to work with repositories that are running pull-requests
+        //on the develop branch. as such we do not run a git-flow feature finish locally
+        // as it wont be accepted into the server workflow.
+        // the developer will do a pull request, and when it is completed on the server
+        // do a cleanup of the local branch, removing remote tracking and dropping the 
+        // branches
         private void DeleteFeatureBranch(GitBranch branch)
         {
 
@@ -310,18 +378,19 @@ namespace khGit
                 }
 
             }
-
-
-
         }
 
+        //sub menu for working with existing stash, or creating stash off a branch
         private void ShowStashMenu(CmdLine cmd)
         {
+            //this means that the user is asking for a new named stash to be created
             if (cmd.HasArg("new"))
             {
                 CreateNewStash(cmd.HasArg("K"));
                 return;
             }
+
+            // start a sub loop rendering to the console for stash code.
             bool bDone = false;
             Int32 stashNum;
             while (!bDone && git.Stashes.Count > 0)
@@ -331,30 +400,39 @@ namespace khGit
                 var cmdline = GetCommandFromUser();
                 stashNum = cmdline.FirstNumber;
                 GitStash stash;
+
                 if (!cmdline.Valid)
                 {
+                    //skip out of the submenu
                     bDone = true;
                 }
                 else
+                //this code is both testing and getting a stash for use further down the loop
                 if (stashNum == -1 || !git.GetStash(stashNum, out stash))
                 {
                     render.WriteLn(">> Invalid stash number", ConsoleColor.Red);
                 }
                 else
                 {
+
                     if (cmdline.HasArg("del"))
                     {
+                        //delete the selected stash
                         Inform(GitCommands.DropStash(stash.Number));
                         LoadStashes();
                     }
                     else
                     {
+                        // only unstash if the stash matches the active branch
+                        // or (F)orce command applied
+                        // or confirmation
                         var bContinue = git.ActiveBranch.Branch == stash.Branch ||
                              cmdline.HasArg("F") ||
                              Confirm($"Unstash ({stash.Number.ToString()}) from {stash.Branch} into {git.ActiveBranch}");
                         if (bContinue)
                         {
                             Inform(GitCommands.ApplyStash(stash.Number, cmdline.HasArg("d")));
+                            //refresh the stashlist before refreshing the rendering loop
                             LoadStashes();
                         }
 
@@ -363,6 +441,9 @@ namespace khGit
             }
         }
 
+        //build a stash with a name for the user
+        //if keepCode is true then we do not remove the stash files from the local
+        //repository. this is purely a backup
         private void CreateNewStash(bool keepCode)
         {
             var s = GetDataFromUser("Type in a stash identity or <Enter> to cancel");
@@ -373,8 +454,13 @@ namespace khGit
         }
 
         //cmdSwitch has some options in relation to switching branches
-        //   -s (perform stash push/pop)
-        //   -ss (perform named stash) 
+        //   s perform stash backup before moving to a new branch so you can recover the work
+        //     
+        //   sp stash all work and switch to a new branch and pop it
+        //      ideal if you are accidentally coding in the wrong branch and haven't committed
+        //   sa stash and apply to new branch, but leave the stash available
+        //   ff if the branch is a feature, then finish and close up the feature branch
+        //      only do this if the pullrequest and remote doesnt exist
         private void ProcessBranchCommand(GitBranch gitBranch, CmdLine cmdSwitch)
         {
             if (gitBranch.Branch.ToLower().Equals("master"))

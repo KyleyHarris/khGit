@@ -15,10 +15,40 @@ namespace khGit
             }
             return false;
         }
+        public void AddDistinct(GitBranch b)
+        {
+            if (!Exists(b.Branch))
+            {
+                Add(b);
+            }
+        }
     }
 
     class GitBranch
     {
+        public static string SanitizeName(string name)
+        {
+            return name.Replace('*', ' ').Trim();
+        }
+        public static bool IsOrigin(string name)
+        {
+            return SanitizeName(name).ToLower().StartsWith("origin/");
+        }
+        public static bool IsFeature(string name)
+        {
+            return SanitizeName(name).ToLower().StartsWith("feature/");
+        }
+        public static string CommonName(string name)
+        {
+            if (name.ToLower().StartsWith("origin/"))
+            {
+                return name.Substring(7);
+            }
+            else
+            {
+                return name;
+            }
+        }
         public override string ToString()
         {
             return Branch;
@@ -29,7 +59,7 @@ namespace khGit
         {
             get
             {
-                return Branch.ToLower().StartsWith("feature/");
+                return IsFeature(Branch);
             }
         }
 

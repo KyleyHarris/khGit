@@ -1,0 +1,1 @@
+xcopy K:\GitHub\khGit\khGit\bin\Debug\netcoreapp3.1\*.* c:\run\khgit\*.* /y /r

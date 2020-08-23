@@ -4,14 +4,8 @@ namespace khGit
 {
     static class GitCommands
     {
-        public static string GetBranchList()
-        {
-            return ExecuteShell.GetOutput("git branch");
-        }
-        public static string CreateDevelopBranch()
-        {
-            return ExecuteShell.GetOutput("git checkout master && git branch develop && git push -u origin develop && git checkout develop");
-        }
+        public static string GetBranchList() => ExecuteShell.GetOutput("git branch");
+        public static string CreateDevelopBranch() => ExecuteShell.GetOutput("git checkout master && git branch develop && git push -u origin develop && git checkout develop");
 
         public static string CheckoutBranch(string branch, StashKind stashKind)
         {
@@ -35,10 +29,7 @@ namespace khGit
             return ExecuteShell.GetOutput($"{before} git checkout {branch} {after}");
         }
 
-        public static string GetStashList()
-        {
-            return ExecuteShell.GetOutput($"git stash list");
-        }
+        public static string GetStashList() => ExecuteShell.GetOutput($"git stash list");
 
         public static string ApplyStash(int number, bool dropStash)
         {
@@ -60,20 +51,12 @@ namespace khGit
             return ExecuteShell.GetOutput($"git stash push -u  -m {msg} {sKeepCmd} ");
         }
 
-        public static string DeleteFeatureBranch(string branch)
-        {
-            return ExecuteShell.GetOutput($"git checkout develop && git branch -d {branch}");
-        }
+        public static string DeleteFeatureBranch(string branch) => ExecuteShell.GetOutput($"git checkout develop && git branch -d {branch}");
 
-        public static string CreateFeatureBranch(string branchName)
-        {
-            return ExecuteShell.GetOutput($"git checkout develop &&  git checkout -b feature/{branchName} && git push -u origin feature/{branchName}  ");
+        public static string CreateFeatureBranch(string branchName) => ExecuteShell.GetOutput($"git checkout develop &&  git checkout -b feature/{branchName} && git push -u origin feature/{branchName}  ");
 
-        }
+        public static string GetUserDetails() => ExecuteShell.GetOutput("git config user.name && git config user.email").Replace("\n", ",");
 
-        public static string GetUserDetails()
-        {
-            return ExecuteShell.GetOutput("git config user.name && git config user.email").Replace("\n", ",");
-        }
+        public static string GetAllBranches() => ExecuteShell.GetOutput("git branch && git branch --list -r");
     }
 }
