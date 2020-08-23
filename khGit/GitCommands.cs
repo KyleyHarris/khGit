@@ -51,12 +51,19 @@ namespace khGit
             return ExecuteShell.GetOutput($"git stash push -u  -m {msg} {sKeepCmd} ");
         }
 
-        public static string DeleteFeatureBranch(string branch) => ExecuteShell.GetOutput($"git checkout develop && git branch -d {branch}");
+        public static string DeleteFeatureBranch(string branch, bool switchToDevelop)
+        {
+            string before = "";
+            if (switchToDevelop) before = "git checkout develop && ";
+
+            return ExecuteShell.GetOutput($"{before} git branch -d {branch}");
+        }
 
         public static string CreateFeatureBranch(string branchName) => ExecuteShell.GetOutput($"git checkout develop &&  git checkout -b feature/{branchName} && git push -u origin feature/{branchName}  ");
 
         public static string GetUserDetails() => ExecuteShell.GetOutput("git config user.name && git config user.email").Replace("\n", ",");
 
         public static string GetAllBranches() => ExecuteShell.GetOutput("git branch && git branch --list -r");
+        public static string PruneRemotes() => ExecuteShell.GetOutput("git remote prune origin");
     }
 }

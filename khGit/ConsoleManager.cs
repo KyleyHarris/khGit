@@ -118,6 +118,7 @@ namespace khGit
                 //PrintCommand("S", "[NEW] Create Stash [K]eep Code");
                 PrintCommand("F", "eature Start [<name>]");
                 PrintCommand("B", "ug Start");
+                PrintCommand("P", "rune remote references");
                 //build normal command structure
             }
             NewLine(); NewLine();
@@ -314,6 +315,9 @@ namespace khGit
                         //run the stash menu subloop for apply/delete/pop stash
                         ShowStashMenu(cmdLine);
                         break;
+                    case "p":
+                        Inform(GitCommands.PruneRemotes());
+                        break;
                     case "f":
                         var featureName = "";
                         // a feature can be run in the form of :
@@ -374,7 +378,7 @@ namespace khGit
             {
                 if (Confirm($"Permanently Delete Branch: {branch.Branch}"))
                 {
-                    Inform(GitCommands.DeleteFeatureBranch(branch.Branch));
+                    Inform(GitCommands.DeleteFeatureBranch(branch.Branch, git.ActiveBranch.Branch.ToLower() != "develop"));
                 }
 
             }

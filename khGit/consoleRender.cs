@@ -22,14 +22,16 @@ public class ConsoleRender
         Console.ForegroundColor = color;
         Console.BackgroundColor = back;
         Console.Write(text);
+        Console.ForegroundColor = oldColor;
+        Console.BackgroundColor = oldBack;
     }
-    public void WriteLn(string text="", ConsoleColor color = ConsoleColor.White, ConsoleColor back = ConsoleColor.Black)
+    public void WriteLn(string text = "", ConsoleColor color = ConsoleColor.White, ConsoleColor back = ConsoleColor.Black)
     {
         this.Write(text, color, back);
         this.CR();
     }
 
-    public void MoveXY(int x,int y)
+    public void MoveXY(int x, int y)
     {
         Console.CursorLeft = x;
         Console.CursorTop = y;
