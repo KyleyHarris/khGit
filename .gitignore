@@ -1,0 +1,6 @@
+.vs/
+bin/
+obj/
+PublishProfiles/
+khGit/Properties/
+khGit/khGit.csproj.user
