@@ -1,0 +1,10 @@
+.vs/
+bin/
+obj/
+PublishProfiles/
+khGit/Properties/
+khGit/khGit.csproj.user
+.vscode/
+.vscode/
+khGit/khgit.code-workspace
+cpy.bat
