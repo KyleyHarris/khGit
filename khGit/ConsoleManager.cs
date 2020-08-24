@@ -90,7 +90,7 @@ namespace khGit
         {
             render.Write("Pick a command to run, <Enter> to quit) ", ConsoleColor.Green);
             var cmdLine = Console.ReadLine();
-            return new CmdLine(cmdLine.Split(new char[] { ' ' }));
+            return new CmdLine(cmdLine);
         }
 
         private void RenderConsole()
@@ -119,6 +119,7 @@ namespace khGit
                 PrintCommand("F", "eature Start [<name>]");
                 PrintCommand("B", "ug Start");
                 PrintCommand("P", "rune remote references");
+                PrintCommand("G", "it (run git cmd)");
                 //build normal command structure
             }
             NewLine(); NewLine();
@@ -191,6 +192,8 @@ namespace khGit
             helpStrings.Add("     in the new branch and preserve the stash");
             helpStrings.Add("FF-> Permanently delete the specified feature ");
             helpStrings.Add("     branch from the local git");
+            helpStrings.Add("FFF->Permanently delete the specified feature ");
+            helpStrings.Add("     branch from the local git AND Remote Branch");
 
             //render help strings as required side by side
             void _PopHelp(bool padding = false)
@@ -263,9 +266,12 @@ namespace khGit
         //used to pause the rendering engine to display information and wait for information
         private void Inform(string s, ConsoleColor c = ConsoleColor.White)
         {
-            render.Write(">> ");
-            render.WriteLn(s, ConsoleColor.Red);
-            render.Write("Press any key to continue) ");
+            if (s != "")
+            {
+                render.Write(">> ");
+                render.WriteLn(s, ConsoleColor.Green);
+            }
+            render.Write("Press any key to continue) ", ConsoleColor.Yellow);
             Console.ReadKey();
         }
         private void Warn(string s)
@@ -279,6 +285,11 @@ namespace khGit
             var cmd = cmdLine.FirstCommand;
             GitBranch branch;
             Int32 branchNum = cmdLine.FirstNumber;
+            if (cmd.ToLower() == "git")
+            {
+                ExecuteShell.RunCmdProcess(cmdLine.FullCommand, false);
+                return;
+            }
 
             // if the primary command is a number then we are performing an action
             // based on a branch. any invalid numbers will be ignored
@@ -472,11 +483,18 @@ namespace khGit
                 Inform("Switching to master branch is not supported in this tool");
                 return;
             }
-            if (cmdSwitch.HasArg("FF"))
+            if (cmdSwitch.HasArg("FF") || cmdSwitch.HasArg("FFF"))
             {
                 DeleteFeatureBranch(gitBranch);
+
+                if (cmdSwitch.HasArg("FFF"))
+                {
+                    DeleteOriginFeatureBranch(gitBranch);
+
+                }
                 return;
             }
+
             if (!gitBranch.IsActive)
             {
                 //                render.WriteLn("S -> will create a stash before switching");
@@ -502,6 +520,24 @@ namespace khGit
 
                 Inform(GitCommands.CheckoutBranch(gitBranch.Branch, stashKind));
             }
+        }
+
+        private void DeleteOriginFeatureBranch(GitBranch branch)
+        {
+
+            if (!branch.IsFeatureBranch)
+            {
+                Inform("please select a feature branch to complete a feature", ConsoleColor.Red);
+            }
+            else
+            {
+                if (Confirm($"Permanently Delete REMOTE ORIGIN Branch: {branch.Branch}"))
+                {
+                    Inform(GitCommands.DeleteRemoteFeatureBranch(branch.Branch));
+                }
+
+            }
+
         }
 
         private void CreateDevelop()

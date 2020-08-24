@@ -4,8 +4,8 @@ namespace khGit
 {
     static class GitCommands
     {
-        public static string GetBranchList() => ExecuteShell.GetOutput("git branch");
-        public static string CreateDevelopBranch() => ExecuteShell.GetOutput("git checkout master && git branch develop && git push -u origin develop && git checkout develop");
+        public static string GetBranchList() => ExecuteShell.RunCmdProcess("git branch");
+        public static string CreateDevelopBranch() => ExecuteShell.RunCmdProcess("git checkout master && git branch develop && git push -u origin develop && git checkout develop", false);
 
         public static string CheckoutBranch(string branch, StashKind stashKind)
         {
@@ -26,29 +26,29 @@ namespace khGit
                     after = "&&  git stash apply";
                     break;
             }
-            return ExecuteShell.GetOutput($"{before} git checkout {branch} {after}");
+            return ExecuteShell.RunCmdProcess($"{before} git checkout {branch} {after}", false);
         }
 
-        public static string GetStashList() => ExecuteShell.GetOutput($"git stash list");
+        public static string GetStashList() => ExecuteShell.RunCmdProcess($"git stash list");
 
         public static string ApplyStash(int number, bool dropStash)
         {
             var stash = "stash@{" + number.ToString() + "}";
             var cmd = dropStash ? "pop" : "apply";
-            return ExecuteShell.GetOutput($"git stash {cmd} {stash} ");
+            return ExecuteShell.RunCmdProcess($"git stash {cmd} {stash} ", false);
         }
 
         public static string DropStash(int number)
         {
             var stash = "stash@{" + number.ToString() + "}";
-            return ExecuteShell.GetOutput($"git stash drop {stash} ");
+            return ExecuteShell.RunCmdProcess($"git stash drop {stash} ", false);
         }
 
         internal static string CreateStash(string s, bool keepCode)
         {
             var msg = '"' + s + '"';
             var sKeepCmd = keepCode ? " &&  git stash apply " : "";
-            return ExecuteShell.GetOutput($"git stash push -u  -m {msg} {sKeepCmd} ");
+            return ExecuteShell.RunCmdProcess($"git stash push -u  -m {msg} {sKeepCmd} ", false);
         }
 
         public static string DeleteFeatureBranch(string branch, bool switchToDevelop)
@@ -56,14 +56,23 @@ namespace khGit
             string before = "";
             if (switchToDevelop) before = "git checkout develop && ";
 
-            return ExecuteShell.GetOutput($"{before} git branch -d {branch}");
+            return ExecuteShell.RunCmdProcess($"{before} git branch -d {branch}", false);
         }
 
-        public static string CreateFeatureBranch(string branchName) => ExecuteShell.GetOutput($"git checkout develop &&  git checkout -b feature/{branchName} && git push -u origin feature/{branchName}  ");
+        public static string CreateFeatureBranch(string branchName)
+        {
+            var s = $"git checkout develop &&  git checkout -b feature/{branchName} && git push -u origin feature/{branchName}  ";
+            return ExecuteShell.RunCmdProcess(s, false);
+        }
 
-        public static string GetUserDetails() => ExecuteShell.GetOutput("git config user.name && git config user.email").Replace("\n", ",");
+        public static string GetUserDetails() => ExecuteShell.RunCmdProcess("git config user.name && git config user.email").Replace("\n", ",");
 
-        public static string GetAllBranches() => ExecuteShell.GetOutput("git branch && git branch --list -r");
-        public static string PruneRemotes() => ExecuteShell.GetOutput("git remote prune origin");
+        public static string GetAllBranches() => ExecuteShell.RunCmdProcess("git branch && git branch --list -r");
+        public static string PruneRemotes() => ExecuteShell.RunCmdProcess("git remote prune origin", false);
+
+        public static string DeleteRemoteFeatureBranch(string branch)
+        {
+            return ExecuteShell.RunCmdProcess($"git push origin --delete {branch}", false);
+        }
     }
 }

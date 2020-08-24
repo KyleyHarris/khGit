@@ -6,12 +6,13 @@ namespace khGit
     {
         public readonly string[] commands;
         private int firstNumber;
-
-        public CmdLine(string[] commands)
+        public string FullCommand { get; private set; }
+        public CmdLine(string commands)
         {
-            this.commands = commands ?? throw new ArgumentNullException(nameof(commands));
+            this.FullCommand = commands ?? throw new ArgumentNullException(nameof(commands));
+            this.commands = commands.Split(new char[] { ' ' });
         }
-        public bool Valid { get { return Count > 0 && commands[0].Trim() != "" ; } }
+        public bool Valid { get { return Count > 0 && commands[0].Trim() != ""; } }
         public int Count { get { return commands.Length; } }
         public bool FirstIsNumber { get { return Valid ? int.TryParse(commands[0], out firstNumber) : false; } }
         public int FirstNumber

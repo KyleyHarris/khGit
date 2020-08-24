@@ -13,7 +13,7 @@ public class ConsoleRender
         Console.CursorLeft = MarginX;
     }
 
-    public void Clear() => Console.Clear();
+    public void Clear() => WriteLn("<------------------------------------------------------>", ConsoleColor.Cyan);
 
     public void Write(string text, ConsoleColor color = ConsoleColor.White, ConsoleColor back = ConsoleColor.Black)
     {
