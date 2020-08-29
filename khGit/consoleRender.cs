@@ -10,7 +10,6 @@ public class ConsoleRender
     public void CR()
     {
         Console.WriteLine();
-        Console.CursorLeft = MarginX;
     }
 
     public void Clear() => WriteLn("<------------------------------------------------------>", ConsoleColor.Cyan);

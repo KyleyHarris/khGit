@@ -96,7 +96,7 @@ namespace khGit
         private void RenderConsole()
         {
             // treating this like a console application
-            render.Clear();
+            //render.Clear();
 
             // make sure the user has the correct commit login shown
             render.WriteLn("khGit Interface - " + GitCommands.GetUserDetails());
@@ -180,40 +180,6 @@ namespace khGit
             LoadBranches();
             render.WriteLn("-Type Branch number to checkout-----------------------------------", ConsoleColor.Green);
 
-            //to save space we are going to render the Branch help next to the branch data
-            //we are not expecting massive unwieldy branch names to be here.
-            // space for around 40char branch names
-            var helpStrings = new List<string>();
-            helpStrings.Add("<Branch-Num> [S][SP][SA]");
-            helpStrings.Add("S -> will create a stash before switching");
-            helpStrings.Add("SP-> will create a stash and apply the stash ");
-            helpStrings.Add("     in the new branch and delete the stash");
-            helpStrings.Add("SA-> will create a stash and apply the stash");
-            helpStrings.Add("     in the new branch and preserve the stash");
-            helpStrings.Add("FF-> Permanently delete the specified feature ");
-            helpStrings.Add("     branch from the local git");
-            helpStrings.Add("FFF->Permanently delete the specified feature ");
-            helpStrings.Add("     branch from the local git AND Remote Branch");
-
-            //render help strings as required side by side
-            void _PopHelp(bool padding = false)
-            {
-                if (helpStrings.Count > 0)
-                {
-                    string s = "";
-                    if (padding)
-                    {
-                        s = s.PadLeft(45);
-                    }
-                    render.WriteLn(s + helpStrings[0]);
-                    helpStrings.RemoveAt(0);
-                }
-                else
-                {
-                    NewLine();
-                }
-            }
-
             // list all branches with a 1 based notation
             // master is not used by the flow at his level
             // so we disable it for this purpose
@@ -235,31 +201,31 @@ namespace khGit
 
                 if (git.IsBranchRemoteOnly(branch.Branch))
                 {
-                    s = "origin/" + s;
+                    render.Write("origin/", ConsoleColor.Cyan);
                 }
                 else
                 if (git.IsBranchLocalOnly(branch.Branch))
                 {
-                    s = "local/" + s;
+                    render.Write("local/", ConsoleColor.Cyan);
                 }
                 if (branch.IsFeatureBranch)
                 {
-                    s = s.Replace("feature/", "f/");
+                    render.Write("feature/", ConsoleColor.Green);
+                    s = s.Replace("feature/", "");
                     c = branch.IsActive ? ConsoleColor.Red : ConsoleColor.Yellow;
                 }
+
                 render.Write(s.PadRight(40), c);
-                _PopHelp();
+
+                NewLine();
+
+
 
             }
-
-            //if there is any help left, write it out
-            while (helpStrings.Count > 0)
-            {
-                _PopHelp(true);
-            }
-
             render.WriteLn("------------------------------------------------------------------", ConsoleColor.Green);
-            render.WriteLn();
+            render.WriteLn("Branch Params: [S]stash/Switch, [SP}stash/switch/pop, [SA]stash/switch/apply, [FF]Delete Local/Origin ");
+            render.WriteLn("------------------------------------------------------------------", ConsoleColor.Green);
+
         }
 
 

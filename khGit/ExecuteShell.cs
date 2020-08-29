@@ -62,7 +62,10 @@ namespace khGit
 
                 });
 
-            Console.WriteLine(">" + cmd);
+            if (!redirectToResult)
+            {
+                Console.WriteLine(">" + cmd);
+            }
             processExecuteThread.Start();
             bool writeln = false;
             while (!threadComplete.WaitOne(1000))
