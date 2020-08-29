@@ -223,7 +223,7 @@ namespace khGit
 
             }
             render.WriteLn("------------------------------------------------------------------", ConsoleColor.Green);
-            render.WriteLn("Branch Params: [S]stash/Switch, [SP}stash/switch/pop, [SA]stash/switch/apply, [FF]Delete Local/Origin ");
+            render.WriteLn("Branch Params: [S]stash/Switch, [SP}stash/switch/pop, [SA]stash/switch/apply, [FF]Del Local [FFF]Del Local+Origin ");
             render.WriteLn("------------------------------------------------------------------", ConsoleColor.Green);
 
         }
@@ -254,6 +254,7 @@ namespace khGit
             if (cmd.ToLower() == "git")
             {
                 ExecuteShell.RunCmdProcess(cmdLine.FullCommand, false);
+                Inform("");
                 return;
             }
 
